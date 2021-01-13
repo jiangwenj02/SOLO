@@ -169,6 +169,8 @@ def segm2json(dataset, results):
         for label in range(len(det)):
             # bbox results
             bboxes = det[label]
+            print('det', det)
+            print('bboxes', bboxes)
             for i in range(bboxes.shape[0]):
                 data = dict()
                 data['image_id'] = img_id
