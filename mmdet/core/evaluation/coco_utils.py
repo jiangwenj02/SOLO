@@ -150,7 +150,6 @@ def det2json(dataset, results):
         result = results[idx]
         for label in range(len(result)):
             bboxes = result[label]
-            print('bboxes', bboxes)
             for i in range(bboxes.shape[0]):
                 data = dict()
                 data['image_id'] = img_id
