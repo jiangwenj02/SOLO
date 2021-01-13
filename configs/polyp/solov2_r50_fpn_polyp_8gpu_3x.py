@@ -94,7 +94,7 @@ data = dict(
     workers_per_gpu=2,
     train=dict(
         type='RepeatDataset',
-        times=5,
+        times=3,
         dataset=dict(type=dataset_type,
         ann_file='/data0/zzhang/new_polyp_annotation_01_03/train.json',
         img_prefix='/data2/dataset/cleaned_data',
@@ -133,7 +133,7 @@ total_epochs = 36
 device_ids = range(8)
 dist_params = dict(backend='nccl')
 log_level = 'INFO'
-work_dir = './work_dirs/solov2_release_r50_fpn_8gpu_3x'
+work_dir = './work_dirs/solov2_r50_fpn_8gpu_3x_poly'
 load_from = None
 resume_from = None
 workflow = [('train', 1)]
