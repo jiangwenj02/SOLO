@@ -232,8 +232,8 @@ def main():
                 coco_eval(result_file, eval_types, dataset.coco, classwise=args.classwise)
             else:
                 if not isinstance(outputs[0], dict):
-                    result_files = results2json_segm(dataset, outputs, args.out, classwise=args.classwise)
-                    coco_eval(result_files, eval_types, dataset.coco)
+                    result_files = results2json_segm(dataset, outputs, args.out)
+                    coco_eval(result_files, eval_types, dataset.coco, classwise=args.classwise)
                 else:
                     for name in outputs[0]:
                         print('\nEvaluating {}'.format(name))
