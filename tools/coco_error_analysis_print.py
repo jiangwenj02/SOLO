@@ -30,7 +30,7 @@ def makeplot(rs, ps, outDir, class_name, iou_type):
         ps_curve.insert(0, np.zeros(ps_curve[0].shape))
         fig = plt.figure()
         ax = plt.subplot(111)
-
+        print(figure_tile)
         for k in range(len(types)):
             ax.plot(rs, ps_curve[k + 1], color=[0, 0, 0], linewidth=0.5)
             ax.fill_between(
@@ -39,7 +39,7 @@ def makeplot(rs, ps, outDir, class_name, iou_type):
                 ps_curve[k + 1],
                 color=cs[k],
                 label=str('[{:.3f}'.format(aps[k]) + ']' + types[k]))
-
+            print(str('[{:.3f}'.format(aps[k]) + ']' + types[k]))
         plt.xlabel('recall')
         plt.ylabel('precision')
         plt.xlim(0, 1.)
