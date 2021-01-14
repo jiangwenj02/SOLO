@@ -151,6 +151,7 @@ def parse_args():
         default='none',
         help='job launcher')
     parser.add_argument('--local_rank', type=int, default=0)
+    parser.add_argument('--classwise', type=bool, default=False)
     args = parser.parse_args()
     if 'LOCAL_RANK' not in os.environ:
         os.environ['LOCAL_RANK'] = str(args.local_rank)
@@ -228,10 +229,10 @@ def main():
             print('Starting evaluate {}'.format(' and '.join(eval_types)))
             if eval_types == ['proposal_fast']:
                 result_file = args.out
-                coco_eval(result_file, eval_types, dataset.coco)
+                coco_eval(result_file, eval_types, dataset.coco, classwise=args.classwise)
             else:
                 if not isinstance(outputs[0], dict):
-                    result_files = results2json_segm(dataset, outputs, args.out)
+                    result_files = results2json_segm(dataset, outputs, args.out, classwise=args.classwise)
                     coco_eval(result_files, eval_types, dataset.coco)
                 else:
                     for name in outputs[0]:
@@ -240,7 +241,7 @@ def main():
                         result_file = args.out + '.{}'.format(name)
                         result_files = results2json(dataset, outputs_,
                                                     result_file)
-                        coco_eval(result_files, eval_types, dataset.coco)
+                        coco_eval(result_files, eval_types, dataset.coco, classwise=args.classwise)
 
     # Save predictions in the COCO json format
     if args.json_out and rank == 0:
