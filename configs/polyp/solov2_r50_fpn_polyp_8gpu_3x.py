@@ -93,12 +93,10 @@ data = dict(
     imgs_per_gpu=2,
     workers_per_gpu=2,
     train=dict(
-        type='RepeatDataset',
-        times=3,
         dataset=dict(type=dataset_type,
         ann_file='/data0/zzhang/new_polyp_annotation_01_03/train.json',
         img_prefix='/data2/dataset/cleaned_data',
-        pipeline=train_pipeline)),
+        pipeline=train_pipeline),
     val=dict(
         type=dataset_type,
         ann_file='/data0/zzhang/new_polyp_annotation_01_03/test.json',
