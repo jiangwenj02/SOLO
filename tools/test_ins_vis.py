@@ -55,10 +55,11 @@ def vis_seg(data, result, img_norm_cfg, data_id, colors, score_thr, save_dir):
         cate_score = cate_score[orders]
 
         seg_show = img_show.copy()
-        seg_bool_show = np.zeros((h,w)).astype(np.uint8)
+        seg_bool_show = np.zeros((img_meta['ori_shape'][0],img_meta['ori_shape'][1])).astype(np.uint8)
         for idx in range(num_mask):
             idx = -(idx+1)
             cur_mask = seg_label[idx, :,:]
+            seg_bool_show = seg_bool_show + (cur_mask > 0.5).astype(np.uint8) * (cate_label[idx] + 1)
             cur_mask = mmcv.imresize(cur_mask, (w, h))
             cur_mask = (cur_mask > 0.5).astype(np.uint8)
             if cur_mask.sum() == 0:
@@ -68,7 +69,6 @@ def vis_seg(data, result, img_norm_cfg, data_id, colors, score_thr, save_dir):
 
             cur_mask_bool = cur_mask.astype(np.bool)
             seg_show[cur_mask_bool] = img_show[cur_mask_bool] * 0.5 + color_mask * 0.5
-            seg_bool_show[cur_mask_bool] = seg_bool_show[cur_mask_bool] + 1
 
             cur_cate = cate_label[idx]
             cur_score = cate_score[idx]
@@ -81,8 +81,6 @@ def vis_seg(data, result, img_norm_cfg, data_id, colors, score_thr, save_dir):
             cv2.putText(seg_show, label_text, vis_pos,
                         cv2.FONT_HERSHEY_COMPLEX, 0.3, (255, 255, 255))  # green
 
-        import pdb
-        pdb.set_trace()
         mmcv.imwrite(seg_show, '{}/{}.jpg'.format(save_dir, data_id))
         filename = img_meta['filename'].replace('/data2/dataset/cleaned_data', save_dir)
         mmcv.imwrite(seg_bool_show, filename)
