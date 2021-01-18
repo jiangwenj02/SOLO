@@ -64,6 +64,8 @@ def vis_seg(data, result, img_norm_cfg, data_id, colors, score_thr, save_dir):
                continue
             color_mask = np.random.randint(
                 0, 256, (1, 3), dtype=np.uint8)
+            import pdb
+            pdb.set_trace()
             cur_mask_bool = cur_mask.astype(np.bool)
             seg_show[cur_mask_bool] = img_show[cur_mask_bool] * 0.5 + color_mask * 0.5
 
