@@ -27,6 +27,9 @@ def vis_seg(data, result, img_norm_cfg, data_id, colors, score_thr, save_dir):
 
     for img, img_meta, cur_result in zip(imgs, img_metas, result):
         if cur_result is None:
+            seg_bool_show = np.zeros((img_meta['ori_shape'][0],img_meta['ori_shape'][1])).astype(np.uint8)
+            filename = img_meta['filename'].replace('/data2/dataset/cleaned_data', save_dir)
+            mmcv.imwrite(seg_bool_show, filename)
             continue
         h, w, _ = img_meta['img_shape']
         img_show = img[:h, :w, :]
