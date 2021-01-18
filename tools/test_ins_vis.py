@@ -55,6 +55,7 @@ def vis_seg(data, result, img_norm_cfg, data_id, colors, score_thr, save_dir):
         cate_score = cate_score[orders]
 
         seg_show = img_show.copy()
+        seg_bool_show = np.zeros((w,h)).astype(np.uint8)
         for idx in range(num_mask):
             idx = -(idx+1)
             cur_mask = seg_label[idx, :,:]
@@ -64,10 +65,10 @@ def vis_seg(data, result, img_norm_cfg, data_id, colors, score_thr, save_dir):
                continue
             color_mask = np.random.randint(
                 0, 256, (1, 3), dtype=np.uint8)
-            import pdb
-            pdb.set_trace()
+
             cur_mask_bool = cur_mask.astype(np.bool)
             seg_show[cur_mask_bool] = img_show[cur_mask_bool] * 0.5 + color_mask * 0.5
+            seg_bool_show[cur_mask_bool] = seg_bool_show[cur_mask_bool] + 1
 
             cur_cate = cate_label[idx]
             cur_score = cate_score[idx]
@@ -80,6 +81,8 @@ def vis_seg(data, result, img_norm_cfg, data_id, colors, score_thr, save_dir):
             cv2.putText(seg_show, label_text, vis_pos,
                         cv2.FONT_HERSHEY_COMPLEX, 0.3, (255, 255, 255))  # green
         mmcv.imwrite(seg_show, '{}/{}.jpg'.format(save_dir, data_id))
+        filename = img_meta.replace('/data2/dataset/cleaned_data', save_dir)
+        mmcv.imwrite(seg_bool_show, filename)
 
 
 def single_gpu_test(model, data_loader, args, cfg=None, verbose=True):
