@@ -6,9 +6,9 @@ from .registry import DATASETS
 
 
 @DATASETS.register_module
-class PolypDataset(CustomDataset):
+class GangDataset(CustomDataset):
 
-    CLASSES = ('Adenomatous', 'Inflammatory', 'Hyperplastic')
+    CLASSES = ('balance', 'balance_arm', 'balance_base', 'spring_dynomometer', 'weight', 'weight_set')
 
     def load_annotations(self, ann_file):
         self.coco = COCO(ann_file)
