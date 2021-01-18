@@ -101,11 +101,13 @@ data = dict(
         type=dataset_type,
         ann_file='/data0/zzhang/new_polyp_annotation_01_03/test.json',
         img_prefix='/data2/dataset/cleaned_data',
+        test_mode=True,
         pipeline=test_pipeline),
     test=dict(
         type=dataset_type,
         ann_file='/data0/zzhang/new_polyp_annotation_01_03/test.json',
         img_prefix='/data2/dataset/cleaned_data',
+        test_mode=True,
         pipeline=test_pipeline))
 # optimizer
 optimizer = dict(type='SGD', lr=0.01, momentum=0.9, weight_decay=0.0001)
