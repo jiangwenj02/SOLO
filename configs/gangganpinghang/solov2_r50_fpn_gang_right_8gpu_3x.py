@@ -133,7 +133,7 @@ total_epochs = 36
 device_ids = range(8)
 dist_params = dict(backend='nccl')
 log_level = 'INFO'
-work_dir = './work_dirs/solov2_r50_fpn_8gpu_3x_poly'
+work_dir = './work_dirs/solov2_r50_fpn_gang_right_8gpu_3x'
 load_from = None
 resume_from = None
 workflow = [('train', 1)]
