@@ -55,7 +55,7 @@ def vis_seg(data, result, img_norm_cfg, data_id, colors, score_thr, save_dir):
         cate_score = cate_score[orders]
 
         seg_show = img_show.copy()
-        seg_bool_show = np.zeros((w,h)).astype(np.uint8)
+        seg_bool_show = np.zeros((h,w)).astype(np.uint8)
         for idx in range(num_mask):
             idx = -(idx+1)
             cur_mask = seg_label[idx, :,:]
