@@ -63,7 +63,7 @@ def vis_seg(data, result, img_norm_cfg, data_id, colors, score_thr, save_dir):
         for idx in range(num_mask):
             idx = -(idx+1)
             cur_mask = seg_label[idx, :,:]
-            seg_bool_show = seg_bool_show + (cur_mask > 0.5).astype(np.uint8) * (cate_label[idx] + 1) * 128
+            seg_bool_show = seg_bool_show + (cur_mask > 0.5).astype(np.uint8) * (cate_label[idx] + 1)
             cur_mask = mmcv.imresize(cur_mask, (w, h))
             cur_mask = (cur_mask > 0.5).astype(np.uint8)
             if cur_mask.sum() == 0:
@@ -85,8 +85,8 @@ def vis_seg(data, result, img_norm_cfg, data_id, colors, score_thr, save_dir):
             cv2.putText(seg_show, label_text, vis_pos,
                         cv2.FONT_HERSHEY_COMPLEX, 0.3, (255, 255, 255))  # green
 
-        filename = img_meta['filename'].replace('/data2/dataset/cleaned_data', save_dir).replace('.jpg', '_bool.jpg')
-        mmcv.imwrite(seg_show, filename)
+        #filename = img_meta['filename'].replace('/data2/dataset/cleaned_data', save_dir).replace('.jpg', '_bool.jpg')
+        #mmcv.imwrite(seg_show, filename)
         filename = img_meta['filename'].replace('/data2/dataset/cleaned_data', save_dir)
         mmcv.imwrite(seg_bool_show, filename)
 
