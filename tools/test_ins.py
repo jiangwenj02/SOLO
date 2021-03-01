@@ -49,7 +49,7 @@ def single_gpu_test(model, data_loader, show=False, verbose=True):
     for i, data in enumerate(data_loader):
         with torch.no_grad():
             seg_result = model(return_loss=False, rescale=not show, **data)
-
+        print(result)
         result = get_masks(seg_result, num_classes=num_classes)
         results.append(result)
             
