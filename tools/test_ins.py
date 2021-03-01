@@ -49,8 +49,9 @@ def single_gpu_test(model, data_loader, show=False, verbose=True):
     for i, data in enumerate(data_loader):
         with torch.no_grad():
             seg_result = model(return_loss=False, rescale=not show, **data)
-        print(result)
+        print(seg_result)
         result = get_masks(seg_result, num_classes=num_classes)
+        print(result)
         results.append(result)
             
         batch_size = data['img'][0].size(0)
