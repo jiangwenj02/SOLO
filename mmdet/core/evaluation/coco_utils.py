@@ -227,13 +227,13 @@ def segmbbox2json_segmbbox(dataset, results):
             bboxes = bbox[label]
             for i in range(len(bboxes)):
                 bbox_score = bboxes[i][1]
-                segm = masks[i][0]
                 data = dict()
                 data['image_id'] = img_id
                 data['score'] = float(bbox_score)
                 data['category_id'] = dataset.cat_ids[label]
                 data['bbox'] = bboxes[i][0]
                 bbox_json_results.append(data)
+                print(data)
 
         for label in range(len(seg)):
             masks = seg[label]
