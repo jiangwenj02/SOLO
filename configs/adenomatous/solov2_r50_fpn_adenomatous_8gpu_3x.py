@@ -136,5 +136,5 @@ dist_params = dict(backend='nccl')
 log_level = 'INFO'
 work_dir = './work_dirs/solov2_r50_fpn_adenomatous_8gpu_3x'
 load_from = None
-resume_from = './work_dirs/solov2_r50_fpn_adenomatous_8gpu_3x/last'
+resume_from = 'work_dirs/solov2_r50_fpn_adenomatous_8gpu_3x/latest.pth'
 workflow = [('train', 1)]
