@@ -17,7 +17,7 @@ model = dict(
         num_outs=5),
     bbox_head=dict(
         type='SOLOv2Head',
-        num_classes=2,
+        num_classes=3,
         in_channels=256,
         stacked_convs=4,
         seg_feat_channels=512,
@@ -119,7 +119,7 @@ lr_config = dict(
     warmup='linear',
     warmup_iters=500,
     warmup_ratio=0.01,
-    step=[27, 33])
+    step=[9, 11])
 checkpoint_config = dict(interval=1)
 # yapf:disable
 log_config = dict(
@@ -130,11 +130,11 @@ log_config = dict(
     ])
 # yapf:enable
 # runtime settings
-total_epochs = 36
+total_epochs = 12
 device_ids = range(8)
 dist_params = dict(backend='nccl')
 log_level = 'INFO'
 work_dir = './work_dirs/solov2_r50_fpn_adenomatous_8gpu_3x'
 load_from = None
-resume_from = None
+resume_from = './work_dirs/solov2_r50_fpn_adenomatous_8gpu_3x/last'
 workflow = [('train', 1)]
