@@ -43,6 +43,7 @@ def get_masks(result, num_classes=80):
         
         import pdb
         pdb.set_trace()
+        pass
 
         return masks, bboxes
 
