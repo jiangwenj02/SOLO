@@ -3,111 +3,61 @@ import os
 import os.path as osp
 import shutil
 import tempfile
-from scipy import ndimage
+
 import mmcv
 import torch
+import torch.nn.functional as F
 import torch.distributed as dist
 from mmcv.parallel import MMDataParallel, MMDistributedDataParallel
 from mmcv.runner import init_dist, get_dist_info, load_checkpoint
 
-from mmdet.core import coco_eval, results2json, wrap_fp16_model, tensor2imgs, get_classes
+from mmdet.core import coco_eval, results2json, results2json_segm, wrap_fp16_model, tensor2imgs, get_classes
 from mmdet.datasets import build_dataloader, build_dataset
 from mmdet.models import build_detector
-import cv2
-
+import time
 import numpy as np
-import matplotlib.cm as cm
+import pycocotools.mask as mask_util
 
-def vis_seg(data, result, img_norm_cfg, data_id, colors, score_thr, save_dir):
-    img_tensor = data['img'][0]
-    img_metas = data['img_meta'][0].data[0]
-    imgs = tensor2imgs(img_tensor, **img_norm_cfg)
-    assert len(imgs) == len(img_metas)
-    class_names = get_classes('coco')
 
-    for img, img_meta, cur_result in zip(imgs, img_metas, result):
+def get_masks(result, num_classes=80):
+    for cur_result in result:
+        masks = [[] for _ in range(num_classes)]
+        bboxes = [[] for _ in range(num_classes)]
         if cur_result is None:
-            seg_bool_show = np.zeros((img_meta['ori_shape'][0], img_meta['ori_shape'][1])).astype(np.uint8)
-            filename = img_meta['filename'].replace('/data2/dataset/cleaned_data', save_dir)
-            mmcv.imwrite(seg_bool_show, filename)
-            continue
-        h, w, _ = img_meta['img_shape']
-        img_show = img[:h, :w, :]
-        
-        seg_label = cur_result[0]
-        seg_label = seg_label.cpu().numpy().astype(np.uint8)
-        cate_label = cur_result[1]
-        cate_label = cate_label.cpu().numpy()
-        score = cur_result[2].cpu().numpy()
+            return masks, bboxes
+        seg_pred = cur_result[0].cpu().numpy().astype(np.uint8)
+        cate_label = cur_result[1].cpu().numpy().astype(np.int)
+        cate_score = cur_result[2].cpu().numpy().astype(np.float)
+        num_ins = seg_pred.shape[0]
+        for idx in range(num_ins):
+            cur_mask = seg_pred[idx, ...]
+            idx, idy = np.nonzero(cur_mask)
+            minx, maxx, miny, maxy = idx.min(), idx.max(), idy.min(), idy.max()
+            bbox = np.array([minx, miny, maxx-minx, maxy-miny])
+            rle = mask_util.encode(
+                np.array(cur_mask[:, :, np.newaxis], order='F'))[0]
+            rst = (rle, cate_score[idx])
+            bbox_rst = (bbox, cate_score[idx])
+            masks[cate_label[idx]].append(rst)
+            bboxes[cate_label[idx]].append(bbox_rst)
 
-        vis_inds = score > score_thr
-        seg_label = seg_label[vis_inds]
-        num_mask = seg_label.shape[0]
-        cate_label = cate_label[vis_inds]
-        cate_score = score[vis_inds]
-
-        mask_density = []
-        for idx in range(num_mask):
-            cur_mask = seg_label[idx, :, :]
-            cur_mask = mmcv.imresize(cur_mask, (w, h))
-            cur_mask = (cur_mask > 0.5).astype(np.int32)
-            mask_density.append(cur_mask.sum())
-        orders = np.argsort(mask_density)
-        seg_label = seg_label[orders]
-        cate_label = cate_label[orders]
-        cate_score = cate_score[orders]
-
-        seg_show = img_show.copy()
-        seg_bool_show = np.zeros((img_meta['ori_shape'][0],img_meta['ori_shape'][1])).astype(np.uint8)
-        for idx in range(num_mask):
-            idx = -(idx+1)
-            cur_mask = seg_label[idx, :,:]
-            seg_bool_show = seg_bool_show + (cur_mask > 0.5).astype(np.uint8) * (cate_label[idx] + 1)
-            cur_mask = mmcv.imresize(cur_mask, (w, h))
-            cur_mask = (cur_mask > 0.5).astype(np.uint8)
-            if cur_mask.sum() == 0:
-               continue
-            color_mask = np.random.randint(
-                0, 256, (1, 3), dtype=np.uint8)
-
-            cur_mask_bool = cur_mask.astype(np.bool)
-            seg_show[cur_mask_bool] = img_show[cur_mask_bool] * 0.5 + color_mask * 0.5
-
-            cur_cate = cate_label[idx]
-            cur_score = cate_score[idx]
-
-            label_text = class_names[cur_cate]
-            #label_text += '|{:.02f}'.format(cur_score)
-            # center
-            center_y, center_x = ndimage.measurements.center_of_mass(cur_mask)
-            vis_pos = (max(int(center_x) - 10, 0), int(center_y))
-            cv2.putText(seg_show, label_text, vis_pos,
-                        cv2.FONT_HERSHEY_COMPLEX, 0.3, (255, 255, 255))  # green
-
-        #filename = img_meta['filename'].replace('/data2/dataset/cleaned_data', save_dir).replace('.jpg', '_bool.jpg')
-        #mmcv.imwrite(seg_show, filename)
-        filename = img_meta['filename'].replace('/data2/dataset/cleaned_data', save_dir)
-        mmcv.imwrite(seg_bool_show, filename)
+        return masks, bboxes
 
 
-def single_gpu_test(model, data_loader, args, cfg=None, verbose=True):
+def single_gpu_test(model, data_loader, show=False, verbose=True):
     model.eval()
     results = []
     dataset = data_loader.dataset
 
-    class_num = 1000 # ins
-    colors = [(np.random.random((1, 3)) * 255).tolist()[0] for i in range(class_num)]    
+    num_classes = len(dataset.CLASSES)
 
     prog_bar = mmcv.ProgressBar(len(dataset))
     for i, data in enumerate(data_loader):
         with torch.no_grad():
-            seg_result = model(return_loss=False, rescale=True, **data)
-            result = None
+            seg_result = model(return_loss=False, rescale=not show, **data)
+        result = get_masks(seg_result, num_classes=num_classes)
         results.append(result)
-
-        if verbose:
-            vis_seg(data, seg_result, cfg.img_norm_cfg, data_id=i, colors=colors, score_thr=args.score_thr, save_dir=args.save_dir)
-
+            
         batch_size = data['img'][0].size(0)
         for _ in range(batch_size):
             prog_bar.update()
@@ -118,12 +68,16 @@ def multi_gpu_test(model, data_loader, tmpdir=None):
     model.eval()
     results = []
     dataset = data_loader.dataset
+    num_classes = len(dataset.CLASSES)
+
     rank, world_size = get_dist_info()
     if rank == 0:
         prog_bar = mmcv.ProgressBar(len(dataset))
     for i, data in enumerate(data_loader):
         with torch.no_grad():
-            result = model(return_loss=False, rescale=True, **data)
+            seg_result = model(return_loss=False, rescale=True, **data)
+
+        result = get_masks(seg_result, num_classes=num_classes)
         results.append(result)
 
         if rank == 0:
@@ -195,15 +149,14 @@ def parse_args():
         choices=['proposal', 'proposal_fast', 'bbox', 'segm', 'keypoints'],
         help='eval types')
     parser.add_argument('--show', action='store_true', help='show results')
-    parser.add_argument('--score_thr', type=float, default=0.3, help='score threshold for visualization')
     parser.add_argument('--tmpdir', help='tmp dir for writing some results')
-    parser.add_argument('--save_dir', help='dir for saveing visualized images')
     parser.add_argument(
         '--launcher',
         choices=['none', 'pytorch', 'slurm', 'mpi'],
         default='none',
         help='job launcher')
     parser.add_argument('--local_rank', type=int, default=0)
+    parser.add_argument('--classwise', type=bool, default=False)
     args = parser.parse_args()
     if 'LOCAL_RANK' not in os.environ:
         os.environ['LOCAL_RANK'] = str(args.local_rank)
@@ -252,6 +205,11 @@ def main():
     fp16_cfg = cfg.get('fp16', None)
     if fp16_cfg is not None:
         wrap_fp16_model(model)
+
+    while not osp.isfile(args.checkpoint):
+        print('Waiting for {} to exist...'.format(args.checkpoint))
+        time.sleep(60)
+
     checkpoint = load_checkpoint(model, args.checkpoint, map_location='cpu')
     # old versions did not save class info in checkpoints, this walkaround is
     # for backward compatibility
@@ -260,14 +218,13 @@ def main():
     else:
         model.CLASSES = dataset.CLASSES
 
-    assert not distributed
     if not distributed:
         model = MMDataParallel(model, device_ids=[0])
-        outputs = single_gpu_test(model, data_loader, args, cfg=cfg)
+        outputs = single_gpu_test(model, data_loader)
     else:
         model = MMDistributedDataParallel(model.cuda())
         outputs = multi_gpu_test(model, data_loader, args.tmpdir)
-
+    print(outputs)
     rank, _ = get_dist_info()
     if args.out and rank == 0:
         print('\nwriting results to {}'.format(args.out))
@@ -277,11 +234,11 @@ def main():
             print('Starting evaluate {}'.format(' and '.join(eval_types)))
             if eval_types == ['proposal_fast']:
                 result_file = args.out
-                coco_eval(result_file, eval_types, dataset.coco)
+                coco_eval(result_file, eval_types, dataset.coco, classwise=args.classwise)
             else:
                 if not isinstance(outputs[0], dict):
-                    result_files = results2json(dataset, outputs, args.out)
-                    coco_eval(result_files, eval_types, dataset.coco)
+                    result_files = results2json_segm(dataset, outputs, args.out)
+                    coco_eval(result_files, eval_types, dataset.coco, classwise=args.classwise)
                 else:
                     for name in outputs[0]:
                         print('\nEvaluating {}'.format(name))
@@ -289,7 +246,7 @@ def main():
                         result_file = args.out + '.{}'.format(name)
                         result_files = results2json(dataset, outputs_,
                                                     result_file)
-                        coco_eval(result_files, eval_types, dataset.coco)
+                        coco_eval(result_files, eval_types, dataset.coco, classwise=args.classwise)
 
     # Save predictions in the COCO json format
     if args.json_out and rank == 0:
