@@ -289,5 +289,6 @@ def results2json_segm_bbox(dataset, results, out_file):
     result_files['segm'] = '{}.{}.json'.format(out_file, 'segm')
     mmcv.dump(json_results[0], result_files['segm'])
     mmcv.dump(json_results[1], result_files['bbox'])
+    print(result_files['segm'], result_files['bbox'])
 
     return json_results[0]
