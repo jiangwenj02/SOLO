@@ -31,8 +31,8 @@ def get_masks(result, num_classes=80):
         num_ins = seg_pred.shape[0]
         for idx in range(num_ins):
             cur_mask = seg_pred[idx, ...]
-            idx, idy = np.nonzero(cur_mask)
-            minx, maxx, miny, maxy = idx.min(), idx.max(), idy.min(), idy.max()
+            axisx, axisy = np.nonzero(cur_mask)
+            minx, maxx, miny, maxy = axisx.min(), axisx.max(), axisy.min(), axisy.max()
             bbox = np.array([minx, miny, maxx-minx, maxy-miny])
             rle = mask_util.encode(
                 np.array(cur_mask[:, :, np.newaxis], order='F'))[0]
