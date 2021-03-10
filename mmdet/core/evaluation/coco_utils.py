@@ -221,8 +221,7 @@ def segmbbox2json_segmbbox(dataset, results):
     bbox_json_results = []
     for idx in range(len(dataset)):
         img_id = dataset.img_ids[idx]
-        if idx > 5:
-            break
+
         seg = results[idx][1]
         bbox = results[idx][0]
         for label in range(len(bbox)):
@@ -235,7 +234,6 @@ def segmbbox2json_segmbbox(dataset, results):
                 data['category_id'] = dataset.cat_ids[label]
                 data['bbox'] = bboxes[i][0]
                 bbox_json_results.append(data)
-                print(data)
 
         for label in range(len(seg)):
             masks = seg[label]
@@ -249,7 +247,7 @@ def segmbbox2json_segmbbox(dataset, results):
                 segm['counts'] = segm['counts'].decode()
                 data['segmentation'] = segm
                 segm_json_results.append(data)
-    return segm_json_results
+    return bbox_json_results, segm_json_results
 
 
 def results2json(dataset, results, out_file):
@@ -284,11 +282,9 @@ def results2json_segm(dataset, results, out_file):
 
 def results2json_segm_bbox(dataset, results, out_file):
     result_files = dict()
-    json_results = segmbbox2json_segmbbox(dataset, results)
+    bbox_json_results, segm_json_results = segmbbox2json_segmbbox(dataset, results)
     result_files['bbox'] = '{}.{}.json'.format(out_file, 'bbox')
     result_files['segm'] = '{}.{}.json'.format(out_file, 'segm')
-    mmcv.dump(json_results[0], result_files['segm'])
-    mmcv.dump(json_results[1], result_files['bbox'])
-    print(result_files['segm'], result_files['bbox'])
-
-    return json_results[0]
+    mmcv.dump(segm_json_results, result_files['segm'])
+    mmcv.dump(bbox_json_results, result_files['bbox'])
+    return result_files
