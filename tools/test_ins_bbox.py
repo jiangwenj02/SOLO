@@ -11,7 +11,7 @@ import torch.distributed as dist
 from mmcv.parallel import MMDataParallel, MMDistributedDataParallel
 from mmcv.runner import init_dist, get_dist_info, load_checkpoint
 
-from mmdet.core import coco_eval, results2json, results2json_segm, wrap_fp16_model, tensor2imgs, get_classes
+from mmdet.core import coco_eval, results2json, results2json_segm_bbox, wrap_fp16_model, tensor2imgs, get_classes
 from mmdet.datasets import build_dataloader, build_dataset
 from mmdet.models import build_detector
 import time
