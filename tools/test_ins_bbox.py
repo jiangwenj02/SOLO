@@ -40,6 +40,9 @@ def get_masks(result, num_classes=80):
             bbox_rst = (bbox, cate_score[idx])
             masks[cate_label[idx]].append(rst)
             bboxes[cate_label[idx]].append(bbox_rst)
+        
+        import pdb
+        pdb.set_trace()
 
         return masks, bboxes
 
