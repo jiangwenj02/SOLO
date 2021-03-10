@@ -57,9 +57,6 @@ def single_gpu_test(model, data_loader, show=False, verbose=True):
             seg_result = model(return_loss=False, rescale=not show, **data)
         result = get_masks(seg_result, num_classes=num_classes)
         results.append(result)
-
-        if i >=5:
-            break
             
         batch_size = data['img'][0].size(0)
         for _ in range(batch_size):

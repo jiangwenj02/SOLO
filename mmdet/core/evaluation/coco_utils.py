@@ -221,8 +221,6 @@ def segmbbox2json_segmbbox(dataset, results):
     bbox_json_results = []
     for idx in range(len(dataset)):
         img_id = dataset.img_ids[idx]
-        if idx  > 5:
-            break
         seg = results[idx][1]
         bbox = results[idx][0]
         for label in range(len(bbox)):
