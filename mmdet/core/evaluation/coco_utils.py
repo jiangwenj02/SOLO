@@ -212,6 +212,38 @@ def segm2json_segm(dataset, results):
                 data['image_id'] = img_id
                 data['score'] = float(mask_score)
                 data['category_id'] = dataset.cat_ids[label]
+                data['bbox'] = segm
+                segm_json_results.append(data)
+    return segm_json_results
+
+def segmbbox2json_segmbbox(dataset, results):
+    segm_json_results = []
+    bbox_json_results = []
+    for idx in range(len(dataset)):
+        img_id = dataset.img_ids[idx]
+        seg = results[idx][1]
+        bbox = results[idx][0]
+        for label in range(len(bbox)):
+            bboxes = bbox[label]
+            for i in range(len(bboxes)):
+                bbox_score = bboxes[i][1]
+                segm = masks[i][0]
+                data = dict()
+                data['image_id'] = img_id
+                data['score'] = float(bbox_score)
+                data['category_id'] = dataset.cat_ids[label]
+                data['bbox'] = bboxes[i][0]
+                bbox_json_results.append(data)
+
+        for label in range(len(seg)):
+            masks = seg[label]
+            for i in range(len(masks)):
+                mask_score = masks[i][1]
+                segm = masks[i][0]
+                data = dict()
+                data['image_id'] = img_id
+                data['score'] = float(mask_score)
+                data['category_id'] = dataset.cat_ids[label]
                 segm['counts'] = segm['counts'].decode()
                 data['segmentation'] = segm
                 segm_json_results.append(data)
@@ -240,7 +272,6 @@ def results2json(dataset, results, out_file):
         raise TypeError('invalid type of results')
     return result_files
 
-
 def results2json_segm(dataset, results, out_file):
     result_files = dict()
     json_results = segm2json_segm(dataset, results)
@@ -248,3 +279,13 @@ def results2json_segm(dataset, results, out_file):
     mmcv.dump(json_results, result_files['segm'])
 
     return result_files
+
+def results2json_segm_bbox(dataset, results, out_file):
+    result_files = dict()
+    json_results = segmbbox2json_segmbbox(dataset, results)
+    result_files['bbox'] = '{}.{}.json'.format(out_file, 'bbox')
+    result_files['segm'] = '{}.{}.json'.format(out_file, 'segm')
+    mmcv.dump(json_results[0], result_files['segm'])
+    mmcv.dump(json_results[1], result_files['bbox'])
+
+    return json_results[0]

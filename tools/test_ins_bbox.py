@@ -24,7 +24,7 @@ def get_masks(result, num_classes=80):
         masks = [[] for _ in range(num_classes)]
         bboxes = [[] for _ in range(num_classes)]
         if cur_result is None:
-            return masks, bboxes
+            return bboxes, masks 
         seg_pred = cur_result[0].cpu().numpy().astype(np.uint8)
         cate_label = cur_result[1].cpu().numpy().astype(np.int)
         cate_score = cur_result[2].cpu().numpy().astype(np.float)
@@ -33,7 +33,7 @@ def get_masks(result, num_classes=80):
             cur_mask = seg_pred[idx, ...]
             axisx, axisy = np.nonzero(cur_mask)
             minx, maxx, miny, maxy = axisx.min(), axisx.max(), axisy.min(), axisy.max()
-            bbox = np.array([minx, miny, maxx-minx, maxy-miny])
+            bbox = [minx, miny, maxx, maxy]
             rle = mask_util.encode(
                 np.array(cur_mask[:, :, np.newaxis], order='F'))[0]
             rst = (rle, cate_score[idx])
@@ -41,7 +41,7 @@ def get_masks(result, num_classes=80):
             masks[cate_label[idx]].append(rst)
             bboxes[cate_label[idx]].append(bbox_rst)
 
-        return masks, bboxes
+        return (bboxes, masks)
 
 
 def single_gpu_test(model, data_loader, show=False, verbose=True):
@@ -224,7 +224,7 @@ def main():
     else:
         model = MMDistributedDataParallel(model.cuda())
         outputs = multi_gpu_test(model, data_loader, args.tmpdir)
-    print(outputs)
+
     rank, _ = get_dist_info()
     if args.out and rank == 0:
         print('\nwriting results to {}'.format(args.out))
